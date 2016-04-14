@@ -24,21 +24,6 @@
 #define PROXIMITY_FREQ 0x89  // Proximity IR test signal freq, 0-3
 #define PROXIMITY_MOD 0x8A  // proximity modulator timing
 
-#define ONECM_PROXIMITY_VALUE 2625
-#define ONECM_AMBIENT_VALUE 33
-#define TWOCM_PROXIMITY_VALUE 2560
-#define TWOCM_AMBIENT_VALUE 35
-#define FOURCM_PROXIMITY_VALUE 2490
-#define FOURCM_AMBIENT_VALUE 64
-//#define SIXCM_PROXIMITY_VALUE 2465
-//#define SIXCM_AMBIENT_VALUE 169
-#define SIXCM_PROXIMITY_VALUE 2440
-#define SIXCM_AMBIENT_VALUE 70
-#define EIGHTCM_PROXIMITY_VALUE 2450
-#define EIGHTCM_AMBIENT_VALUE 233 // seems to lower over time for some reason
-#define TENCM_PROXIMITY_VALUE 2445
-#define TENCM_AMBIENT_VALUE 280
-
 long proximityCalibrationValue;
 long ambientCalibrationValue;
 
@@ -55,10 +40,14 @@ void setup() {
   Wire.begin();
   readCalibrationFromEeprom();
   proximityInit();
+
+  // Hook up servos, stop the wheels
   leftServo.attach(LEFT_SERVO_PIN);
   rightServo.attach(RIGHT_SERVO_PIN);
   irServo.attach(IR_SERVO_PIN);
   servoStop();
+
+  // Configure the pins
   pinMode(LEFT_LED_PIN, OUTPUT);
   pinMode(RIGHT_LED_PIN, OUTPUT);
   pinMode(A0, INPUT);
@@ -68,6 +57,7 @@ void setup() {
   digitalWrite(1, CALIBRATE_BUTTON_PIN);
   digitalWrite(1, MOTOR_SWITCH_PIN);
 
+  // If the button is pressed on startup set a new proximity sensor calibration value.
   if(digitalRead(CALIBRATE_BUTTON_PIN) == 0) {
     Serial.println("Setting new calibration values...");
     ambientCalibrationValue = readAmbient();
@@ -75,12 +65,14 @@ void setup() {
     writeCalibrationToEeprom(ambientCalibrationValue, proximityCalibrationValue);
   }
 
+  // Print out the current calibration values for the proximity sensor for reference. 
   Serial.print("Calibration values are: ");
   Serial.print(ambientCalibrationValue);
   Serial.print(", ");
   Serial.println(proximityCalibrationValue);
-  
-  irServo.write(45);
+
+  // Set the proximity sensor servo to a position, give it time to get there, then detach (it made noises when not detached)
+  irServo.write(45); // This angle can be tweaked, I found 45 to work well.
   delay(500);
   irServo.detach();
 
@@ -89,21 +81,25 @@ void setup() {
   }
 
 void loop() {
+
+  // Get values of switches and proximity sensor, print out proximity values.
   int motorSwitchPin = digitalRead(MOTOR_SWITCH_PIN);
-    ambientValue = readAmbient();
-    proximityValue = readProximity();
-    Serial.print(ambientValue, DEC);
-    Serial.print("\t");
-    Serial.println(proximityValue, DEC);  
-    
+  ambientValue = readAmbient();
+  proximityValue = readProximity();
+  Serial.print(ambientValue, DEC);
+  Serial.print("\t");
+  Serial.println(proximityValue, DEC);  
+
+  // If the switch 1 on the DIP switch isn't turned on then stop the wheels. 
   if(motorSwitchPin == 0) {
+    // Check the proximity value twice, and check if they are the same. 
     int proximityCheck1 = checkProximity();
-    //delay(10);
     int proximityCheck2 = checkProximity();
+    // This seemed to help stop issues with false readings. 
     if(proximityCheck1 == proximityCheck2) {
-      if(proximityCheck1 == 1) {
+      if(proximityCheck1 == 1) { // A 1 means it should turn away from the wall (too close)
         servoSlightRight();        
-      } else if(proximityCheck1 == 2) {
+      } else if(proximityCheck1 == 2) { // A 2 means it shold turn towards the wall (too far away)
         servoSlightLeft();
       }
     }
@@ -113,21 +109,21 @@ void loop() {
   }
 }
 
+// A function that reads the value from the proximity sensor and outputs a number based on if it should move away from the wall or towards it
+// A 1 means it should turn away, and a 2 means it should turn towards
 uint8_t checkProximity() {
-    int allowedDifference = 10;
     ambientValue = readAmbient();
     proximityValue = readProximity();
     if((proximityCalibrationValue) <= proximityValue){// && ambientValue < ambientCalibrationValue) {
       // Turn away from wall
-      //servoSlightRight();
       return 1;
     } else if((proximityCalibrationValue) > proximityValue){// && ambientValue > ambientCalibrationValue) {
       // Turn towards wall
-      //servoSlightLeft();
       return 2;
     }
 }
 
+// Write the four bytes to the EEPROM for calibration values.
 void writeCalibrationToEeprom(long ambientValue, long proximityValue) {
   uint8_t address = 0;
   
@@ -156,6 +152,7 @@ void writeCalibrationToEeprom(long ambientValue, long proximityValue) {
   
 }
 
+// Read the four bytes from the EEPROM for the calibration values. 
 void readCalibrationFromEeprom() {
   int address = 0;
   
@@ -233,6 +230,8 @@ void proximityInit() {
   writeByte(PROXIMITY_FREQ, 2);  // 781.25 kHz
   writeByte(PROXIMITY_MOD, 0x81);  // 129, recommended by Vishay
 }
+
+// Everything after this was taken from the example on the course website. 
 
 // readProximity() returns a 16-bit value from the VCNL4000's proximity data registers
 unsigned int readProximity()
