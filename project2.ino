@@ -2,6 +2,8 @@
 #include <Servo.h>
 #include <EEPROM.h>
 
+// For pin and board information see the wiki: https://bitbucket.org/csce236project2/project2/wiki/Home
+
 #define CALIBRATE_BUTTON_PIN 4
 #define MOTOR_SWITCH_PIN 7
 #define LEFT_SERVO_PIN 6
