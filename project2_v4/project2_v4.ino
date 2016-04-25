@@ -4,7 +4,7 @@
 #define RIGHT_SERVO_PIN 6
 #define LEFT_IR_PIN 3
 #define RIGHT_IR_PIN 7
-// 1 is off the line and 0 is on the line
+// 1 is on the line and 0 is off the line
 
 Servo leftServo;
 Servo rightServo;
@@ -54,20 +54,22 @@ void loop() {
   Serial.println(rightIrValue);
   
 
-  if((leftIrValue == 0) && (rightIrValue == 0)) { // on the line, go straight
+  if((leftIrValue == 1) && (rightIrValue == 1)) { // on the line, go straight
     previousServoDirection = 1;
     servoStraight();
-  } else if((leftIrValue == 0) && (rightIrValue == 1)) {
+  } else if((leftIrValue == 1) && (rightIrValue == 0)) {
     previousServoDirection = 2;
     servoLeft();    
-  } else if((leftIrValue == 1) && (rightIrValue == 0)) {
+  } else if((leftIrValue == 0) && (rightIrValue == 1)) {
     previousServoDirection = 3;
     servoRight();
   } else { 
+    /*
     if(previousServoDirection == 2) {
       servoRight();
     } else if(previousServoDirection == 3) {
       servoLeft();
-    }
+    }*/
+    servoStraight();
   }
 }
