@@ -6,8 +6,8 @@
 
 #define CALIBRATE_BUTTON_PIN 4
 #define MOTOR_SWITCH_PIN 7
-#define LEFT_SERVO_PIN 6
-#define RIGHT_SERVO_PIN 5
+#define LEFT_SERVO_PIN 5
+#define RIGHT_SERVO_PIN 6
 #define IR_SERVO_PIN 11
 #define LEFT_LED_PIN 12
 #define RIGHT_LED_PIN 13
@@ -88,12 +88,14 @@ void loop() {
   int motorSwitchPin = digitalRead(MOTOR_SWITCH_PIN);
   ambientValue = readAmbient();
   proximityValue = readProximity();
+  Serial.print("Motor switch: ");
+  Serial.println(motorSwitchPin);
   Serial.print(ambientValue, DEC);
   Serial.print("\t");
   Serial.println(proximityValue, DEC);  
 
   // If the switch 1 on the DIP switch isn't turned on then stop the wheels. 
-  if(motorSwitchPin == 0) {
+  //if(motorSwitchPin == 0) {
     // Check the proximity value twice, and check if they are the same. 
     int proximityCheck1 = checkProximity();
     int proximityCheck2 = checkProximity();
@@ -106,9 +108,9 @@ void loop() {
       }
     }
 
-  } else {
-    servoStop();
-  }
+  //} else {
+  //  servoStop();
+ // }
 }
 
 // A function that reads the value from the proximity sensor and outputs a number based on if it should move away from the wall or towards it
