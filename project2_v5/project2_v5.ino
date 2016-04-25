@@ -30,10 +30,21 @@
 Servo leftServo;
 Servo rightServo;
 
+//ambient is not really used, concentrating on proximity
 long proximityCalibrationValue;
 long ambientCalibrationValue;
 long ambientValue;
 long proximityValue;
+
+/*
+ * global time variables - used when turning back on the line
+ *  - the robot can find the line while turning - main loop gets that
+ */
+uint32_t t0;
+uint32_t t1;
+
+//saves the state - if the robot is going back to the line from avoiding the obstacle == 1
+uint8_t goingAround = 0;
 
 void setup() {
   
@@ -83,39 +94,37 @@ void servoRight() {
   rightServo.write(91);    
 }
 
+void servoSlightRight() {
+  leftServo.write(131);
+  rightServo.write(75);
+}
+
 //steps to go around an obstacle from left side
 void goAroundLeft() {
-  Serial.println("Going around left");
-  uint16_t t1 = millis();
-  uint16_t t2 = 0;
-  while(checkProximity() == 2) {
-    servoLeft();
-  }
-  t1 = millis() - t1;
+  Serial.println("Start of goAroundLeft");
+  servoLeft();
+  t0 = millis();
+  t1 = 0;
+
+  //keep turning left until the obstacle is out of the way (+200ms to make space for the rest of the robot to go around)
+  while(readProximity() > proximityCalibrationValue);
+  delay(200);
+  t0 = millis() - t0;
   servoStraight();
   delay(1000);
-  t2 = millis();
-  while(millis() - t2 < t1) {
-    servoRight();
-  }
-  delay(1000);
-  t2 = millis();
-  while(millis() - t2 < t1) {
-    servoLeft();
-  }
-  Serial.println("Done");
-  /*servoLeft();
-  delay(700);
-  servoStraight();
-  delay(2500);
+  t1 = millis();
   servoRight();
-  delay(700);
+  delay(t0);
   servoStraight();
-  delay(2500);
+  delay(500);
+
+  //turn to be facing the line again
   servoRight();
-  delay(700);
-  servoStraight();
-  */
+  //don't want a sharp angle to find the line again - turning right 100ms shorter time
+  delay(t0 - 100);
+  goingAround = 1;
+  Serial.println(goingAround);
+  Serial.println("End of goAroundLeft");
 }
 
 //steps to go around an obstale from right side
@@ -299,10 +308,30 @@ void loop() {
     int proximityCheck1 = readProximity();
     int proximityCheck2 = readProximity();
     if(proximityCheck1 >= proximityValue && proximityCheck2 >= proximityCheck1) {
-      //Serial.println("Obstacle"); 
+      Serial.println("Obstacle"); 
       goAroundLeft();       
     } else {
-      //Serial.println("Free");
+      Serial.println("Free");
     }
+    Serial.println(goingAround);
   }
+    
+
+  if((leftIrValue == 1) && (rightIrValue == 1)) { // on the line, go straight
+    previousServoDirection = 1;
+    servoStraight();
+    goingAround = 0;
+  } else if((leftIrValue == 1) && (rightIrValue == 0)) {
+    previousServoDirection = 2;
+    servoLeft();    
+    goingAround = 0;
+  } else if((leftIrValue == 0) && (rightIrValue == 1)) {
+    previousServoDirection = 3;
+    servoRight();
+    goingAround = 0;
+  } else {
+    //neither one of the sensors is on the line
+    servoStraight();
+  }
+  
 }
