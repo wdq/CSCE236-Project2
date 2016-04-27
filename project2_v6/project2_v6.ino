@@ -10,7 +10,7 @@
 #define RIGHT_LED_PIN 12
 #define VCNL4000_ADDRESS 0x13  // 0x26 write, 0x27 read
 #define LEFT_IR_PIN 3
-#define RIGHT_IR_PIN 7
+#define RIGHT_IR_PIN 2
 // 1 is on the line and 0 is off the line
 
 // VCNL4000 Register Map
@@ -82,8 +82,8 @@ void servoStraight() {
 }
 
 void servoStop() {
-  leftServo.write(90);
-  rightServo.write(95);
+  leftServo.write(92);
+  rightServo.write(90);
 }
 
 void servoLeft() {
@@ -110,7 +110,7 @@ void goAroundLeft() {
 
   //keep turning left until the obstacle is out of the way (+200ms to make space for the rest of the robot to go around)
   while(readProximity() > proximityCalibrationValue);
-  delay(200);
+  delay(400);
   t0 = millis() - t0;
   servoStraight();
   delay(1000);
