@@ -138,7 +138,7 @@ void goAroundRight() {
 
   //keep turning left until the obstacle is out of the way (+200ms to make space for the rest of the robot to go around)
   while(readProximity() > proximityCalibrationValue);
-  delay(200);
+  delay(400);
   t0 = millis() - t0;
   servoStraight();
   delay(1000);
